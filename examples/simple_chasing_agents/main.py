@@ -1,8 +1,12 @@
-from predators_and_preys_env.env import PredatorsAndPreysEnv
-import numpy as np
-from examples.simple_chasing_agents.agents import ChasingPredatorAgent
-from examples.simple_chasing_agents.agents import FleeingPreyAgent
+import sys
+
+sys.path.append("../../")
+
 import time
+import numpy as np
+
+from predators_and_preys_env.env import PredatorsAndPreysEnv
+from examples.simple_chasing_agents.agents import ChasingPredatorAgent, FleeingPreyAgent
 
 env = PredatorsAndPreysEnv(render=True)
 predator_agent = ChasingPredatorAgent()
