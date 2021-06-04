@@ -20,5 +20,5 @@ while True:
         state_dict = env.reset()
         step_count = 0
 
-    state_dict, done = env.step(predator_agent.act(state_dict), prey_agent.act(state_dict))
+    state_dict, reward, done = env.step(predator_agent.act(state_dict), prey_agent.act(state_dict))
     step_count += 1

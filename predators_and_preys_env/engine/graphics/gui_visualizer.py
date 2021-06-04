@@ -29,7 +29,7 @@ class GuiVisualizer:
                                 (entity.position[1] + self.y_bias) * self.ratio),
                                entity.radius * self.ratio)
 
-        for entity in self.game.predators:
+        for is_collide, entity in self.game.predators:
             pygame.draw.circle(self.screen, (220, 0, 0),
                                ((entity.position[0] + self.x_bias) * self.ratio,
                                 (entity.position[1] + self.y_bias) * self.ratio),

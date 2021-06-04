@@ -32,7 +32,8 @@ class Game:
             "preys": [],
             "obstacles": []
         }
-        for e in self.predators:
+
+        for is_collide, e in self.predators:
             state_dict["predators"].append({
                 "x_pos": e.position[0],
                 "y_pos": e.position[1],
@@ -54,13 +55,61 @@ class Game:
                 "radius": e.radius
             })
         return state_dict
+    
+    def get_reward_dict(self):
+        
+        reward_dict = {
+            "predators": [],
+            "preys": []
+        }
+        
+        for is_collide, e in self.predators:
+            reward_dict["predators"].append({
+                "reward": self._get_predator_reward(is_collide, e),
+            })
+        
+        for is_alive, e in self.preys:
+            reward_dict["preys"].append({
+                "reward": self._get_prey_reward(is_alive, e),
+            })
+        
+        return reward_dict
+
+    def _get_predator_reward(self, is_collide, agent):
+        reward = 0.0
+        
+        if is_collide:
+            for is_alive, e in self.preys:
+                # if not is_alive:
+                if agent.is_intersect(e):
+                    reward += 10
+                    
+        reward -= 0.1 * min([agent.real_distance(e) for is_alive, e in self.preys if is_alive], default=0.0) 
+        
+        return reward
+    
+    def _get_prey_reward(self, is_alive, agent):
+        reward = 0.0
+        
+        if not is_alive:
+            for is_collide, e in self.predators:
+                # if is_collide:
+                if agent.is_intersect(e):
+                    reward -= 10
+        
+        reward += 0.1 * min([agent.real_distance(e) for _, e in self.predators])
+        
+        return reward
 
     def step(self, actions):
+        assert len(actions["preys"]) == len(self.preys)
+        assert len(actions["predators"]) == len(self.predators)
+        
         for a, (is_alive, e) in zip(actions["preys"], self.preys):
             if not is_alive:
                 continue
             e.move(a, self.world_timestep)
-        for a, e in zip(actions["predators"], self.predators):
+        for a, (is_collide, e) in zip(actions["predators"], self.predators):
             e.move(a, self.world_timestep)
 
         corrected = True
@@ -87,13 +136,13 @@ class Game:
         corrected = True
         while corrected:
             corrected = False
-            for i, e in enumerate(self.predators):
+            for i, (is_collide, e) in enumerate(self.predators):
                 this_corrected = False
                 e.force_clip_positon(-self.x_limit, -self.y_limit, self.x_limit, self.y_limit)
                 for other in self.obstacles:
                     this_corrected = this_corrected or e.force_not_intersect(other)
                 if not this_corrected:
-                    for j, other in enumerate(self.predators):
+                    for j, (_, other) in enumerate(self.predators):
                         if i == j:
                             continue
                         this_corrected = this_corrected or e.force_not_intersect(other)
@@ -107,8 +156,9 @@ class Game:
 
         for i in range(len(self.preys)):
             for j in range(len(self.predators)):
-                if self.predators[j].is_intersect(self.preys[i][1]):
+                if self.predators[j][1].is_intersect(self.preys[i][1]):
                     self.preys[i][0] = False
+                    self.predators[j][0] = True
 
     def reset(self):
         self.obstacles = []
@@ -159,10 +209,10 @@ class Game:
                             created = False
                             break
                 if created:
-                    for e in self.predators:
+                    for _, e in self.predators:
                         if e.is_intersect(new_e):
                             created = False
                             break
 
                 if created:
-                    self.predators.append(new_e)
+                    self.predators.append([False, new_e])

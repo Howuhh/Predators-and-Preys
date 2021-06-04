@@ -4,21 +4,21 @@ import time
 
 DEFAULT_CONFIG = {
     "game": {
-        "num_obsts": 16,
-        "num_preds": 3,
-        "num_preys": 7,
-        "x_limit": 12,
-        "y_limit": 12,
+        "num_obsts": 0, # 16
+        "num_preds": 1, # 3
+        "num_preys": 1, # 7
+        "x_limit": 6, # 12
+        "y_limit": 6, # 12
         "obstacle_radius_bounds": [0.8, 2.0],
         "prey_radius": 0.8,
         "predator_radius": 1.0,
         "predator_speed": 6.0,
-        "prey_speed": 9.0,
+        "prey_speed": 9.0, # 9
         "world_timestep": 1/100,
     },
     "environment": {
         "frameskip": 5,
-        "time_limit": 1000
+        "time_limit": 1000 # 1000
     }
 }
 
@@ -54,12 +54,13 @@ class PredatorsAndPreysEnv:
 
         self.time_left -= 1
         state = self.game.get_state_dict()
+        reward = self.game.get_reward_dict()
         is_done = True
         for prey in state["preys"]:
             is_done = is_done and not prey["is_alive"]
         is_done = is_done or self.time_left < 0
 
-        return state, is_done
+        return state, reward, is_done
 
     def reset(self):
         self.game.reset()
@@ -67,3 +68,6 @@ class PredatorsAndPreysEnv:
         if self.visualizer is not None:
             self.visualizer.update()
         return self.game.get_state_dict()
+    
+    def seed(self, seed):
+        self.game.seed(seed=seed)

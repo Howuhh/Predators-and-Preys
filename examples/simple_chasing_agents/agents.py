@@ -5,9 +5,8 @@ from predators_and_preys_env.agent import PredatorAgent, PreyAgent
 def distance(first, second):
     return ((first["x_pos"] - second["x_pos"])**2 + (first["y_pos"] - second["y_pos"])**2)**0.5
 
-
 class ChasingPredatorAgent(PredatorAgent):
-    def act(self, state_dict):
+    def act(self, state_dict, **kwargs):
         action = []
         for predator in state_dict["predators"]:
             closest_prey = None
@@ -28,7 +27,7 @@ class ChasingPredatorAgent(PredatorAgent):
 
 
 class FleeingPreyAgent(PreyAgent):
-    def act(self, state_dict):
+    def act(self, state_dict, **kwargs):
         action = []
         for prey in state_dict["preys"]:
             closest_predator = None
