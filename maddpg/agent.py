@@ -13,6 +13,8 @@ class Actor(nn.Module):
         
         self.model = nn.Sequential(
             nn.Linear(state_size,  hidden_size),
+            nn.Tanh(),
+            nn.Linear(hidden_size, hidden_size),
             nn.ReLU(),
             nn.Linear(hidden_size, hidden_size),
             nn.ReLU(),
@@ -32,6 +34,8 @@ class CentralizedCritic(nn.Module):
         
         self.model = nn.Sequential(
             nn.Linear(state_size + action_size, hidden_size),
+            nn.Tanh(),
+            nn.Linear(hidden_size, hidden_size),
             nn.ReLU(),
             nn.Linear(hidden_size, hidden_size),
             nn.ReLU(), 

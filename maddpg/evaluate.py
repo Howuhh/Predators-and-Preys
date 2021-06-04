@@ -1,19 +1,24 @@
 import torch
-from maddpg import MADDPG
+import numpy as np
+
 from wrapper import VectorizeWrapper
-
 from predators_and_preys_env.env import PredatorsAndPreysEnv
-from examples.simple_chasing_agents.agents import ChasingPredatorAgent, FleeingPreyAgent
 
-from main import rollout
+env = VectorizeWrapper(PredatorsAndPreysEnv(render=True))
 
-baseline_prey = FleeingPreyAgent()
-baseline_predator = ChasingPredatorAgent()
+done = True
+step_count = 0
+while True:
+    if done:
+        print("reset")
+        state, global_state = env.reset()
+        step_count = 0
+        
+    actions = np.zeros(env.predator_action_size + env.prey_action_size)
+        
+    state, reward, done, global_state = env.step(actions)
+    step_count += 1
 
-maddpg = torch.load("maddpg.pt", map_location="cpu")
-predator, prey = maddpg.agents
+    print(state)
 
-env = VectorizeWrapper(PredatorsAndPreysEnv(render=True), return_state_dict=True)
-
-for _ in range(20):
-    print(rollout(env, predator_agent=predator, prey_agent=prey, greedy=True))
+    print(f"step {step_count}")
