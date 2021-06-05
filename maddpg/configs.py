@@ -25,8 +25,8 @@ prey_agent_config = {
     "critic_action_size": CRITIC_ACTION_SIZE,
     "actor_hidden_size": 64, 
     "critic_hidden_size": 64, 
-    "actor_lr": 1e-3, 
-    "critic_lr": 1e-3, 
+    "actor_lr": 1e-4, 
+    "critic_lr": 1e-4, 
     "tau": 1e-3, 
     "gamma": 0.99, 
     "act_noise": 0.1
@@ -38,11 +38,11 @@ predator_agent_config = {
     "critic_action_size": CRITIC_ACTION_SIZE,
     "actor_hidden_size": 64, 
     "critic_hidden_size": 64, 
-    "actor_lr": 1e-3, 
-    "critic_lr": 1e-3, 
+    "actor_lr": 1e-4, 
+    "critic_lr": 1e-4, 
     "tau": 1e-3, 
     "gamma": 0.99, 
-    "act_noise": 0.3
+    "act_noise": 0.5
 }
 
 
@@ -84,6 +84,6 @@ SIMPLE2v2 = {
     },
     "environment": {
         "frameskip": 5,
-        "time_limit": 50
+        "time_limit": 500
     }
 }

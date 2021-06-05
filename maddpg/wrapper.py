@@ -26,7 +26,7 @@ class VectorizeWrapper:
     
     @staticmethod
     def _vectorize_reward(reward_dicts):
-        return [reward_dicts["predators"].sum(), reward_dicts["preys"].sum()]
+        return [reward_dicts["predators"].mean(), reward_dicts["preys"].mean()]
         
         # def _reward_to_array(reward_dicts_):
         #     return sum([d["reward"] for d in reward_dicts_])

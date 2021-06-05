@@ -1,4 +1,5 @@
 import os
+import shutil
 import torch
 import numpy as np
 
@@ -38,8 +39,6 @@ def rollout(env, predator_agent, prey_agent, greedy=False):
         state, rewards, done, state_dict = env.step(predator_actions, prey_actions)
         total_reward.append(rewards)
     
-        # print(rewards)
-    
     return np.vstack(total_reward).sum(axis=0)
 
 
@@ -57,6 +56,10 @@ def eval_maddpg(env_config, maddpg, episodes=10, seed=42):
 
 def train_maddpg(env_config, agents_configs, buffer_config, timesteps, batch_size, 
                  updates_per_iter, update_every, eval_every, device="cpu", seed=10):
+    if os.path.exists("agents"):
+        shutil.rmtree("agents")
+    os.makedirs("agents")
+    
     buffer = ReplayBuffer(**buffer_config, device=device)
     maddpg = MADDPG(agents_configs, device=device)
     
@@ -83,6 +86,53 @@ def train_maddpg(env_config, agents_configs, buffer_config, timesteps, batch_siz
         
             if step % eval_every == 0:
                 rewards = eval_maddpg(env_config, maddpg, episodes=10, seed=42)
+                maddpg.save(f"agents/maddpg_{step}.pt")
+        
+                print("==" * 15 + f"Step {step}" + "==" * 15)
+                for i in range(len(maddpg.agents)):
+                    actor_loss, critic_loss = losses[i]
+                    print(f"Agent{i + 1} -- Reward: {rewards[i]}, Critic loss: {round(actor_loss, 5)}, Actor loss: {round(critic_loss, 5)}")
+                    
+    return maddpg
+
+
+def train_maddpg_imitation(env_config, baseline_agents, agents_configs, buffer_config, imitation_steps, 
+                           timesteps, batch_size, updates_per_iter, update_every, eval_every, device="cpu", seed=10):
+    baseline_pred, baseline_prey = baseline_agents
+    
+    buffer = ReplayBuffer(**buffer_config, device=device)
+    maddpg = MADDPG(agents_configs, device=device)
+    
+    env = VectorizeWrapper(
+        PredatorsAndPreysEnv(config=env_config, render=False),
+        return_state_dict=True
+    )
+    set_seed(env, seed=seed)
+    
+    (state, state_dict), done = env.reset(), False
+    
+    for step in range(1, timesteps + 1):
+        if done:
+            (state, state_dict), done = env.reset(), False 
+        
+        if step < imitation_steps:
+            actions = [np.array(baseline_pred.act(state_dict)), np.array(baseline_prey.act(state_dict))]
+        else:
+            actions = [agent.act(state) for agent in maddpg.agents]
+                
+        next_state, reward, done, next_state_dict = env.step(*actions)
+        buffer.add(state, actions, reward, next_state, done)
+
+        state = next_state
+        state_dict = next_state_dict
+        
+        if step % update_every == 0 and step > batch_size:
+            for _ in range(updates_per_iter):
+                batch = buffer.sample(batch_size)
+                losses = maddpg.update(batch)
+        
+            if step % eval_every == 0:
+                rewards = eval_maddpg(env_config, maddpg, episodes=10, seed=42)
                 maddpg.save(f"maddpg.pt")
         
                 print("==" * 15 + f"Step {step}" + "==" * 15)
@@ -93,29 +143,47 @@ def train_maddpg(env_config, agents_configs, buffer_config, timesteps, batch_siz
     return maddpg
 
 
+
+
 if __name__ == "__main__":
     from configs import predator_agent_config, prey_agent_config, buffer_config
     from configs import SIMPLE2v1, SIMPLE2v2
     
-    # maddpg = train_maddpg(
-    #     env_config=SIMPLE2v2,
+    maddpg = train_maddpg(
+        env_config=SIMPLE2v2,
+        agents_configs=[predator_agent_config, prey_agent_config],
+        buffer_config=buffer_config,
+        timesteps=10_000_000,
+        batch_size=256,
+        updates_per_iter=1,
+        update_every=1,
+        eval_every=25_000,
+        seed=10
+    )
+    
+    # TODO: посмотреть как в DQfH добавляют в буффер транзиции от эксперта
+    # baseline_prey = FleeingPreyAgent()
+    # baseline_predator = ChasingPredatorAgent()
+
+    # maddpg = train_maddpg_imitation(
+    #     env_config=SIMPLE2v1,
+    #     baseline_agents=[baseline_predator, baseline_prey],
     #     agents_configs=[predator_agent_config, prey_agent_config],
     #     buffer_config=buffer_config,
     #     timesteps=100_000,
+    #     imitation_steps=10_000,
     #     batch_size=256,
     #     updates_per_iter=1,
     #     update_every=1,
-    #     eval_every=10000,
+    #     eval_every=10_000,
     #     seed=10
     # )
-
-    # baseline_prey = FleeingPreyAgent()
-    # baseline_predator = ChasingPredatorAgent()
     
-    maddpg = torch.load("maddpg.pt", map_location="cpu")
-    predator, prey = maddpg.agents
+    # maddpg = torch.load("agents/maddpg_250000.pt", map_location="cpu")
+    # predator, prey = maddpg.agents
     
-    env = VectorizeWrapper(PredatorsAndPreysEnv(config=SIMPLE2v2, render=True), return_state_dict=True)
+    # env = VectorizeWrapper(PredatorsAndPreysEnv(config=SIMPLE2v2, render=True), return_state_dict=True)
     
-    for _ in range(200):
-        rollout(env, predator_agent=predator, prey_agent=prey, greedy=True)
+    # for _ in range(200):
+    #     set_seed(env, np.random.randint(0, 10000))
+    #     rollout(env, predator_agent=predator, prey_agent=prey, greedy=True)
