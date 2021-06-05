@@ -13,20 +13,17 @@ class Actor(nn.Module):
         
         self.model = nn.Sequential(
             nn.Linear(state_size,  hidden_size),
-            nn.Tanh(),
-            nn.Linear(hidden_size, hidden_size),
             nn.ReLU(),
             nn.Linear(hidden_size, hidden_size),
             nn.ReLU(),
             nn.Linear(hidden_size, action_size),
-            # nn.Tanh()
         )
+        self.model[-1].weight.data.uniform_(-3e-3, 3e-3)
         
     def forward(self, state):
-        out = self.model(state)
-        # print(out)
-        return torch.frac(out)
+        out = self.model(state) 
         
+        return torch.tanh(out / 30)
 
 class CentralizedCritic(nn.Module):
     def __init__(self, state_size, action_size, hidden_size=64):
@@ -34,8 +31,6 @@ class CentralizedCritic(nn.Module):
         
         self.model = nn.Sequential(
             nn.Linear(state_size + action_size, hidden_size),
-            nn.Tanh(),
-            nn.Linear(hidden_size, hidden_size),
             nn.ReLU(),
             nn.Linear(hidden_size, hidden_size),
             nn.ReLU(), 

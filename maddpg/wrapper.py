@@ -17,7 +17,6 @@ class VectorizeWrapper:
             states = []
 
             for state_dict in state_dicts_:
-                # state_dict.pop("speed", None)
                 states.extend(list(state_dict.values()))
             
             return states
@@ -26,12 +25,8 @@ class VectorizeWrapper:
     
     @staticmethod
     def _vectorize_reward(reward_dicts):
-        
-        def _reward_to_array(reward_dicts_):
-            return [d["reward"] for d in reward_dicts_]
-                    
-        return [*_reward_to_array(reward_dicts["predators"]), *_reward_to_array(reward_dicts["preys"])]
-    
+        return list(reward_dicts["predators"]) + list(reward_dicts["preys"])
+            
     @staticmethod
     def _relative_agents_states(state_dicts):
         new_agents_states = []
@@ -61,13 +56,9 @@ class VectorizeWrapper:
         
         state_dict, reward, done = self.env.step(predator_actions, prey_actions)
         
-        # print(state_dict)
-        
         global_state = self._vectorize_state(state_dict)
         rel_agents_states = self._relative_agents_states(state_dict)
         rewards = self._vectorize_reward(reward)
-        
-        # print(state_dict, rel_agents_states)
         
         return rel_agents_states, rewards, done, global_state
         
