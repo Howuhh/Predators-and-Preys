@@ -25,7 +25,6 @@ class VectorizeWrapper:
     
     @staticmethod
     def _vectorize_reward(reward_dicts):
-        
         def _reward_to_array(reward_dicts_):
             return sum([d["reward"] for d in reward_dicts_])
                     

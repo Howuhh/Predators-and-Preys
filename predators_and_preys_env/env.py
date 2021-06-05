@@ -5,7 +5,7 @@ import time
 DEFAULT_CONFIG = {
     "game": {
         "num_obsts": 0, # 16
-        "num_preds": 1, # 3
+        "num_preds": 2, # 3
         "num_preys": 1, # 7
         "x_limit": 6, # 12
         "y_limit": 6, # 12
@@ -18,7 +18,7 @@ DEFAULT_CONFIG = {
     },
     "environment": {
         "frameskip": 5,
-        "time_limit": 1000 # 1000
+        "time_limit": 500 # 1000
     }
 }
 

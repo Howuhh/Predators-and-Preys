@@ -1,0 +1,6 @@
+.DS_Store
+.python-version
+*.pt
+agents
+maddpg/**/__pycache__
+predators_and_preys_env/**/__pycache__

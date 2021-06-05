@@ -1,9 +1,7 @@
 import torch
 import torch.nn.functional as F
 
-import numpy as np
-
-from utils import ReplayBuffer
+from copy import deepcopy
 from agent import Agent
 
 
@@ -11,32 +9,17 @@ class MADDPG:
     def __init__(self, agents_configs, device):
         self.agents = [Agent(**agent_config, device=device) for agent_config in agents_configs]
         self.device = device
-    
-    def __to_torch_tensor(self, global_state, agents_actions, agents_rewards, global_next_state, done):
-        global_state = torch.FloatTensor(global_state).to(self.device)
-        agents_actions = [torch.FloatTensor(agent_actions).to(self.device) for agent_actions in agents_actions]
-        agents_rewards = [torch.FloatTensor(agent_rewards).to(self.device).unsqueeze(1) for agent_rewards in agents_rewards]
-        global_next_state = torch.FloatTensor(global_next_state).to(self.device)
-        done = torch.IntTensor(done).to(self.device).unsqueeze(1)
         
-        return global_state, agents_actions, agents_rewards, global_next_state, done
-    
     def update(self, batch):
-        # for now only works when agents state == global env state, as in PredatorsAndPreys env
-        # if you want to fix this - change ReplayBuffer sampling and this function (not too hard tho)
-        global_state, agents_actions, agents_rewards, global_next_state, done = self.__to_torch_tensor(*batch)
-        
+        global_state, agents_actions, agents_rewards, global_next_state, done = batch
+                
         agents_actions = torch.cat(agents_actions, dim=-1)
-        # # target agents actions for next states
+        # target agents actions for next states
         target_agents_next_actions = torch.cat(
-            [torch.FloatTensor(agent.target_actor(global_next_state)).to(self.device) for agent in self.agents], dim=-1
+            [agent.target_actor(global_next_state).to(self.device) for agent in self.agents], dim=-1
         ).detach()
-        # # current actors actions for updates
-        # new_agents_actions = torch.cat(
-        #     [torch.FloatTensor(agent.actor(global_state)).to(self.device) for agent in self.agents], dim=-1
-        # )
-        losses = []
 
+        losses = []
         # agents updates
         for agent_idx, agent in enumerate(self.agents):
             # critic update
@@ -54,9 +37,11 @@ class MADDPG:
             agent.critic_optimizer.step()
             
             # current actors actions for updates
-            new_agents_actions = torch.cat(
-                [torch.FloatTensor(agent.actor(global_state)).to(self.device) for agent in self.agents], dim=-1
-            )
+            with torch.no_grad():
+                new_agents_actions = deepcopy(agents_actions)
+                offset = sum([self.agents[past_idx].actor.action_size for past_idx in range(agent_idx)])
+                
+            new_agents_actions[:, offset:offset+agent.actor.action_size] = agent.actor(global_state).to(self.device)
             
             # actor update
             actor_loss = -agent.critic(global_state, new_agents_actions).mean()

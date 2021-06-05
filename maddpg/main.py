@@ -1,5 +1,4 @@
 import os
-from numpy.core.numeric import roll
 import torch
 import numpy as np
 
@@ -33,12 +32,8 @@ def rollout(env, predator_agent, prey_agent, greedy=False):
             prey_actions = prey_agent.act(state_dict)
         else:
             prey_actions = prey_agent.act(state, greedy=greedy)
-                
-        # print(steps)
-        # print(predator_actions, prey_actions)
-        # print(state_dict)
+
         steps += 1
-        # print(predator_actions, prey_actions)
         
         state, rewards, done, state_dict = env.step(predator_actions, prey_actions)
         total_reward.append(rewards)
@@ -55,8 +50,9 @@ def eval_maddpg(maddpg, episodes=10, seed=42):
     return np.vstack(rewards).mean(axis=0)
 
 
-def train_maddpg(agents_configs, timesteps, buffer_size, batch_size, updates_per_iter, update_every, eval_every, device="cpu", seed=10):
-    buffer = ReplayBuffer(size=buffer_size, n_agents=2)
+def train_maddpg(agents_configs, buffer_config, timesteps, batch_size, 
+                 updates_per_iter, update_every, eval_every, device="cpu", seed=10):
+    buffer = ReplayBuffer(**buffer_config, device=device)
     maddpg = MADDPG(agents_configs, device=device)
     
     env = VectorizeWrapper(PredatorsAndPreysEnv(render=False))
@@ -81,26 +77,30 @@ def train_maddpg(agents_configs, timesteps, buffer_size, batch_size, updates_per
                 losses = maddpg.update(batch)
         
             if step % eval_every == 0:
-                rewards = eval_maddpg(maddpg, episodes=10, seed=42)
+                rewards = eval_maddpg(maddpg, episodes=25, seed=42)
                 maddpg.save(f"maddpg.pt")
         
-                print(step, rewards, losses)
+                print("==" * 20 + f"Step {step}" + "==" * 20)
+                for i in range(len(maddpg.agents)):
+                    actor_loss, critic_loss = losses[i]
+                    print(f"Agent{i + 1} -- Reward: {rewards[i]}, Critic loss: {round(actor_loss, 5)}, Actor loss: {round(critic_loss, 5)}")
                 
     return maddpg
 
 
 if __name__ == "__main__":
-    from configs import predator_agent_config, prey_agent_config
+    from configs import predator_agent_config, prey_agent_config, buffer_config
     
     maddpg = train_maddpg(
         agents_configs=[predator_agent_config, prey_agent_config],
+        buffer_config=buffer_config,
         timesteps=100_000,
-        buffer_size=1_000_000,
-        batch_size=1024,
-        updates_per_iter=25,
-        update_every=100,
-        eval_every=1000
+        batch_size=256,
+        updates_per_iter=1,
+        update_every=1,
+        eval_every=10
     )
+
     # baseline_prey = FleeingPreyAgent()
     # baseline_predator = ChasingPredatorAgent()
     
@@ -109,5 +109,5 @@ if __name__ == "__main__":
     
     # env = VectorizeWrapper(PredatorsAndPreysEnv(render=True), return_state_dict=True)
     
-    # for _ in range(20):
+    # for _ in range(200):
     #     rollout(env, predator_agent=predator, prey_agent=prey, greedy=True)
