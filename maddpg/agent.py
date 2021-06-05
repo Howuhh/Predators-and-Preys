@@ -8,8 +8,10 @@ from copy import deepcopy
 
 
 class Actor(nn.Module):
-    def __init__(self, state_size, action_size, hidden_size=64):
+    def __init__(self, state_size, action_size, hidden_size=64, temperature=30):
         super().__init__()
+        
+        self.temp = temperature
         
         self.model = nn.Sequential(
             nn.Linear(state_size,  hidden_size),
@@ -18,12 +20,13 @@ class Actor(nn.Module):
             nn.ReLU(),
             nn.Linear(hidden_size, action_size),
         )
-        self.model[-1].weight.data.uniform_(-3e-3, 3e-3)
+        # self.model[-1].weight.data.uniform_(-3e-3, 3e-3) # ?
         
     def forward(self, state):
         out = self.model(state) 
         
-        return torch.tanh(out / 30)
+        return torch.tanh(out / self.temp)
+
 
 class CentralizedCritic(nn.Module):
     def __init__(self, state_size, action_size, hidden_size=64):
@@ -45,8 +48,8 @@ class CentralizedCritic(nn.Module):
 
 class Agent:
     def __init__(self, state_size, actor_action_size, critic_action_size, actor_hidden_size=64, critic_hidden_size=64, 
-                 actor_lr=1e-3, critic_lr=1e-3, tau=1e-3, gamma=0.99, act_noise=0.1, device="cpu"):
-        self.actor = Actor(state_size, actor_action_size, actor_hidden_size).to(device)
+                 actor_lr=1e-3, critic_lr=1e-3, temperature=30, tau=1e-3, gamma=0.99, act_noise=0.1, device="cpu"):
+        self.actor = Actor(state_size, actor_action_size, actor_hidden_size, temperature).to(device)
         self.actor_optimizer = optim.Adam(self.actor.parameters(), lr=actor_lr)
         
         self.critic = CentralizedCritic(state_size, critic_action_size, critic_hidden_size).to(device)

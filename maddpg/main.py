@@ -1,4 +1,5 @@
 import os
+import shutil
 import torch
 import numpy as np
 
@@ -29,8 +30,8 @@ def rollout(env, agents, greedy=False):
     return np.vstack(total_reward).sum(axis=0)
 
 
-def eval_maddpg(maddpg, episodes=10, seed=42):
-    env = VectorizeWrapper(PredatorsAndPreysEnv(render=False))
+def eval_maddpg(env_config, maddpg, episodes=10, seed=42):
+    env = VectorizeWrapper(PredatorsAndPreysEnv(config=env_config, render=False))
     set_seed(env, seed)
 
     rewards = [rollout(env, maddpg.agents, greedy=True) for _ in range(episodes)]
@@ -38,11 +39,15 @@ def eval_maddpg(maddpg, episodes=10, seed=42):
     return np.vstack(rewards).mean(axis=0)
 
 
-def train_maddpg(agents_configs, buffer_config, timesteps, batch_size, updates_per_iter, update_every, eval_every, device="cpu", seed=10):
+def train_maddpg(env_config, agents_configs, buffer_config, timesteps, batch_size, updates_per_iter, update_every, eval_every, device="cpu", seed=10):
+    if os.path.exists("agents"):
+        shutil.rmtree("agents")
+    os.makedirs("agents")
+    
     buffer = ReplayBuffer(**buffer_config)
     maddpg = MADDPG(agents_configs, device=device)
     
-    env = VectorizeWrapper(PredatorsAndPreysEnv(render=False))
+    env = VectorizeWrapper(PredatorsAndPreysEnv(config=env_config, render=False))
     set_seed(env, seed=seed)
     
     (state, global_state), done = env.reset(), False
@@ -65,7 +70,7 @@ def train_maddpg(agents_configs, buffer_config, timesteps, batch_size, updates_p
                 losses = maddpg.update(batch)
         
             if step % eval_every == 0:
-                rewards = eval_maddpg(maddpg, episodes=50, seed=42)
+                rewards = eval_maddpg(env_config, maddpg, episodes=25, seed=42)
                 maddpg.save(f"agents/maddpg_{step}.pt")
         
                 print("==" * 15 + f"Step {step}" + "==" * 15)
@@ -78,10 +83,12 @@ def train_maddpg(agents_configs, buffer_config, timesteps, batch_size, updates_p
 
 if __name__ == "__main__":
     from configs import predator_agent_config, prey_agent_config, buffer_config
+    from configs import SIMPLE2v1, SIMPLE2v2
 
-    agents_configs = [predator_agent_config, predator_agent_config, predator_agent_config] + [prey_agent_config, prey_agent_config]
+    agents_configs = [predator_agent_config, predator_agent_config] + [prey_agent_config]
 
     maddpg = train_maddpg(
+        env_config=SIMPLE2v1,
         agents_configs=agents_configs,
         buffer_config=buffer_config,
         timesteps=1_000_000,
@@ -91,8 +98,8 @@ if __name__ == "__main__":
         eval_every=10_000
     )
 
-    # maddpg = torch.load("agents/maddpg_70000.pt", map_location="cpu")
-    # env = VectorizeWrapper(PredatorsAndPreysEnv(render=True))
+    # maddpg = torch.load("agents/maddpg_30000.pt", map_location="cpu")
+    # env = VectorizeWrapper(PredatorsAndPreysEnv(config=SIMPLE2v1, render=True))
     
     # for _ in range(200):
     #     set_seed(env, np.random.randint(0, 100000))

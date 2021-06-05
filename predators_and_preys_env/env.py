@@ -4,11 +4,11 @@ import time
 
 DEFAULT_CONFIG = {
     "game": {
-        "num_obsts": 3,
-        "num_preds": 3,
-        "num_preys": 2,
-        "x_limit": 12,
-        "y_limit": 12,
+        "num_obsts": 1,
+        "num_preds": 2,
+        "num_preys": 1,
+        "x_limit": 6,
+        "y_limit": 6,
         "obstacle_radius_bounds": [0.8, 2.0],
         "prey_radius": 0.8,
         "predator_radius": 1.0,
@@ -19,7 +19,7 @@ DEFAULT_CONFIG = {
     },
     "environment": {
         "frameskip": 5,
-        "time_limit": 100
+        "time_limit": 50 # 500
     }
 }
 

@@ -3,12 +3,18 @@ from itertools import chain
 
 
 class VectorizeWrapper:
-    def __init__(self, env, return_state_dict=False):
+    def __init__(self, env, return_state_dict=False, death_masking=False):
         self.env = env
+        
         self.return_state_dict = return_state_dict # TODO: for baseline agents
+        self.death_masking = death_masking # TODO: for future training
         
         self.predator_action_size = env.predator_action_size
         self.prey_action_size = env.prey_action_size
+        
+    @staticmethod
+    def _death_masking(state_dicts):
+        pass
         
     @staticmethod
     def _vectorize_state(state_dicts):
