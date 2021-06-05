@@ -1,3 +1,4 @@
+import numpy as np
 
 
 class VectorizeWrapper:
@@ -25,10 +26,12 @@ class VectorizeWrapper:
     
     @staticmethod
     def _vectorize_reward(reward_dicts):
-        def _reward_to_array(reward_dicts_):
-            return sum([d["reward"] for d in reward_dicts_])
+        return [reward_dicts["predators"].sum(), reward_dicts["preys"].sum()]
+        
+        # def _reward_to_array(reward_dicts_):
+        #     return sum([d["reward"] for d in reward_dicts_])
                     
-        return [_reward_to_array(reward_dicts["predators"]), _reward_to_array(reward_dicts["preys"])]
+        # return [_reward_to_array(reward_dicts["predators"]), _reward_to_array(reward_dicts["preys"])]
     
     def step(self, predator_actions, prey_actions):
         state_dict, reward, done = self.env.step(predator_actions, prey_actions)

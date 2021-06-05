@@ -38,11 +38,16 @@ def rollout(env, predator_agent, prey_agent, greedy=False):
         state, rewards, done, state_dict = env.step(predator_actions, prey_actions)
         total_reward.append(rewards)
     
+        # print(rewards)
+    
     return np.vstack(total_reward).sum(axis=0)
 
 
-def eval_maddpg(maddpg, episodes=10, seed=42):
-    env = VectorizeWrapper(PredatorsAndPreysEnv(render=False), return_state_dict=True)
+def eval_maddpg(env_config, maddpg, episodes=10, seed=42):
+    env = VectorizeWrapper(
+        PredatorsAndPreysEnv(config=env_config, render=False), 
+        return_state_dict=True
+    )
     set_seed(env, seed)
 
     rewards = [rollout(env, maddpg.agents[0], maddpg.agents[1], greedy=True) for _ in range(episodes)]
@@ -50,12 +55,12 @@ def eval_maddpg(maddpg, episodes=10, seed=42):
     return np.vstack(rewards).mean(axis=0)
 
 
-def train_maddpg(agents_configs, buffer_config, timesteps, batch_size, 
+def train_maddpg(env_config, agents_configs, buffer_config, timesteps, batch_size, 
                  updates_per_iter, update_every, eval_every, device="cpu", seed=10):
     buffer = ReplayBuffer(**buffer_config, device=device)
     maddpg = MADDPG(agents_configs, device=device)
     
-    env = VectorizeWrapper(PredatorsAndPreysEnv(render=False))
+    env = VectorizeWrapper(PredatorsAndPreysEnv(config=env_config, render=False))
     set_seed(env, seed=seed)
     
     state, done = env.reset(), False
@@ -77,37 +82,40 @@ def train_maddpg(agents_configs, buffer_config, timesteps, batch_size,
                 losses = maddpg.update(batch)
         
             if step % eval_every == 0:
-                rewards = eval_maddpg(maddpg, episodes=25, seed=42)
+                rewards = eval_maddpg(env_config, maddpg, episodes=10, seed=42)
                 maddpg.save(f"maddpg.pt")
         
-                print("==" * 20 + f"Step {step}" + "==" * 20)
+                print("==" * 15 + f"Step {step}" + "==" * 15)
                 for i in range(len(maddpg.agents)):
                     actor_loss, critic_loss = losses[i]
                     print(f"Agent{i + 1} -- Reward: {rewards[i]}, Critic loss: {round(actor_loss, 5)}, Actor loss: {round(critic_loss, 5)}")
-                
+                    
     return maddpg
 
 
 if __name__ == "__main__":
     from configs import predator_agent_config, prey_agent_config, buffer_config
+    from configs import SIMPLE2v1, SIMPLE2v2
     
-    maddpg = train_maddpg(
-        agents_configs=[predator_agent_config, prey_agent_config],
-        buffer_config=buffer_config,
-        timesteps=100_000,
-        batch_size=256,
-        updates_per_iter=1,
-        update_every=1,
-        eval_every=10
-    )
+    # maddpg = train_maddpg(
+    #     env_config=SIMPLE2v2,
+    #     agents_configs=[predator_agent_config, prey_agent_config],
+    #     buffer_config=buffer_config,
+    #     timesteps=100_000,
+    #     batch_size=256,
+    #     updates_per_iter=1,
+    #     update_every=1,
+    #     eval_every=10000,
+    #     seed=10
+    # )
 
     # baseline_prey = FleeingPreyAgent()
     # baseline_predator = ChasingPredatorAgent()
     
-    # maddpg = torch.load("maddpg.pt", map_location="cpu")
-    # predator, prey = maddpg.agents
+    maddpg = torch.load("maddpg.pt", map_location="cpu")
+    predator, prey = maddpg.agents
     
-    # env = VectorizeWrapper(PredatorsAndPreysEnv(render=True), return_state_dict=True)
+    env = VectorizeWrapper(PredatorsAndPreysEnv(config=SIMPLE2v2, render=True), return_state_dict=True)
     
-    # for _ in range(200):
-    #     rollout(env, predator_agent=predator, prey_agent=prey, greedy=True)
+    for _ in range(200):
+        rollout(env, predator_agent=predator, prey_agent=prey, greedy=True)

@@ -19,7 +19,6 @@ class ReplayBuffer:
         # state, action, reward, next_state
         self.agents_actions = [torch.empty((size, action_sizes[i]), dtype=torch.float, device=device) for i in range(n_agents)]
         self.agents_rewards = [torch.empty((size, 1), dtype=torch.float, device=device) for _ in range(n_agents)]
-        
 
     def add(self, global_state, agents_actions, agents_rewards, global_next_state, done):
         # add to global buffer (for critic)

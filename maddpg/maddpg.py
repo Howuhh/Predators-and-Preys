@@ -1,6 +1,7 @@
 import torch
 import torch.nn.functional as F
 
+import numpy as np
 from copy import deepcopy
 from agent import Agent
 
@@ -31,7 +32,7 @@ class MADDPG:
             assert Q.shape == Q_target.shape
             
             critic_loss = F.mse_loss(Q, Q_target.detach())
-            
+                        
             agent.critic_optimizer.zero_grad()
             critic_loss.backward()
             agent.critic_optimizer.step()
@@ -52,6 +53,10 @@ class MADDPG:
             
             # target networks update
             agent.update_target_networks()
+            
+            if critic_loss.item() == np.inf:
+                print(critic_loss, critic_loss.item() == np.inf)
+                print(agents_rewards[agent_idx])
             
             losses.append([critic_loss.item(), actor_loss.item()])
             

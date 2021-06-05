@@ -3,7 +3,7 @@ OBSTACLES_STATE_DIM = 3
 OBSTACLES_TEAM_SIZE = 0
 
 PREY_STATE_DIM = 4
-PREY_TEAM_SIZE = 1
+PREY_TEAM_SIZE = 2
 
 PREDATOR_STATE_DIM = 3
 PREDATOR_TEAM_SIZE = 2
@@ -43,4 +43,47 @@ predator_agent_config = {
     "tau": 1e-3, 
     "gamma": 0.99, 
     "act_noise": 0.3
+}
+
+
+SIMPLE2v1 = {
+    "game": {
+        "num_obsts": 0,
+        "num_preds": 2,
+        "num_preys": 1,
+        "x_limit": 6,
+        "y_limit": 6,
+        "obstacle_radius_bounds": [0.8, 2.0],
+        "prey_radius": 0.8,
+        "predator_radius": 1.0,
+        "predator_speed": 6.0,
+        "prey_speed": 9.0,
+        "world_timestep": 1/100,
+        "frameskip": 5
+    },
+    "environment": {
+        "frameskip": 5,
+        "time_limit": 500
+    }
+}
+
+SIMPLE2v2 = {
+    "game": {
+        "num_obsts": 0,
+        "num_preds": 2,
+        "num_preys": 2,
+        "x_limit": 6,
+        "y_limit": 6,
+        "obstacle_radius_bounds": [0.8, 2.0],
+        "prey_radius": 0.8,
+        "predator_radius": 1.0,
+        "predator_speed": 6.0,
+        "prey_speed": 9.0,
+        "world_timestep": 1/100,
+        "frameskip": 5
+    },
+    "environment": {
+        "frameskip": 5,
+        "time_limit": 50
+    }
 }
