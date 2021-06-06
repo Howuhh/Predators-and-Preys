@@ -3,6 +3,7 @@ import shutil
 import torch
 import numpy as np
 
+from tqdm import tqdm
 from utils import ReplayBuffer
 from maddpg import MADDPG
 from wrapper import VectorizeWrapper
@@ -68,7 +69,7 @@ def train_maddpg(env_config, agents_configs, buffer_config, timesteps, batch_siz
     
     state, done = env.reset(), False
     
-    for step in range(1, timesteps + 1):
+    for step in tqdm(range(1, timesteps + 1)):
         if done:
             state, done = env.reset(), False 
         
@@ -85,13 +86,19 @@ def train_maddpg(env_config, agents_configs, buffer_config, timesteps, batch_siz
                 losses = maddpg.update(batch)
         
             if step % eval_every == 0:
-                rewards = eval_maddpg(env_config, maddpg, episodes=10, seed=42)
+                rewards = eval_maddpg(env_config, maddpg, episodes=25, seed=42)
                 maddpg.save(f"agents/maddpg_{step}.pt")
         
                 print("==" * 15 + f"Step {step}" + "==" * 15)
                 for i in range(len(maddpg.agents)):
                     actor_loss, critic_loss = losses[i]
                     print(f"Agent{i + 1} -- Reward: {rewards[i]}, Critic loss: {round(actor_loss, 5)}, Actor loss: {round(critic_loss, 5)}")
+        
+        # limits scheduling
+        # limit = 3 - (3 - 6) * step / timesteps
+
+        # env.env.game.x_limit = limit
+        # env.env.game.y_limit = limit
                     
     return maddpg
 
@@ -137,8 +144,8 @@ def train_maddpg_imitation(env_config, baseline_agents, agents_configs, buffer_c
         
                 print("==" * 15 + f"Step {step}" + "==" * 15)
                 for i in range(len(maddpg.agents)):
-                    actor_loss, critic_loss = losses[i]
-                    print(f"Agent{i + 1} -- Reward: {rewards[i]}, Critic loss: {round(actor_loss, 5)}, Actor loss: {round(critic_loss, 5)}")
+                    critic_loss, actor_loss = losses[i]
+                    print(f"Agent{i + 1} -- Reward: {rewards[i]}, Critic loss: {round(critic_loss, 5)}, Actor loss: {round(actor_loss, 5)}")
                     
     return maddpg
 
@@ -149,17 +156,17 @@ if __name__ == "__main__":
     from configs import predator_agent_config, prey_agent_config, buffer_config
     from configs import SIMPLE2v1, SIMPLE2v2
     
-    maddpg = train_maddpg(
-        env_config=SIMPLE2v2,
-        agents_configs=[predator_agent_config, prey_agent_config],
-        buffer_config=buffer_config,
-        timesteps=10_000_000,
-        batch_size=256,
-        updates_per_iter=1,
-        update_every=1,
-        eval_every=25_000,
-        seed=10
-    )
+    # maddpg = train_maddpg(
+    #     env_config=SIMPLE2v1,
+    #     agents_configs=[predator_agent_config, prey_agent_config],
+    #     buffer_config=buffer_config,
+    #     timesteps=1_000_000,
+    #     batch_size=256,
+    #     updates_per_iter=1,
+    #     update_every=1,
+    #     eval_every=10_000,
+    #     seed=42
+    # )
     
     # TODO: посмотреть как в DQfH добавляют в буффер транзиции от эксперта
     # baseline_prey = FleeingPreyAgent()
@@ -179,11 +186,14 @@ if __name__ == "__main__":
     #     seed=10
     # )
     
-    # maddpg = torch.load("agents/maddpg_250000.pt", map_location="cpu")
-    # predator, prey = maddpg.agents
+    maddpg = torch.load("agents/maddpg_30000.pt", map_location="cpu")
+    predator, prey = maddpg.agents
     
-    # env = VectorizeWrapper(PredatorsAndPreysEnv(config=SIMPLE2v2, render=True), return_state_dict=True)
+    SIMPLE2v2["environment"]["time_limit"] = 50
+    # SIMPLE2v2["game"]["x_limit"] = 4
+    # SIMPLE2v2["game"]["y_limit"] = 4
+    env = VectorizeWrapper(PredatorsAndPreysEnv(config=SIMPLE2v1, render=True), return_state_dict=True)
     
-    # for _ in range(200):
-    #     set_seed(env, np.random.randint(0, 10000))
-    #     rollout(env, predator_agent=predator, prey_agent=prey, greedy=True)
+    for _ in range(200):
+        set_seed(env, np.random.randint(0, 10000))
+        rollout(env, predator_agent=predator, prey_agent=prey, greedy=True)

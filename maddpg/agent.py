@@ -13,7 +13,7 @@ class Actor(nn.Module):
         self.action_size = action_size
         
         self.model = nn.Sequential(
-            nn.Linear(state_size,  hidden_size),
+            nn.Linear(state_size, hidden_size),
             nn.ReLU(),
             nn.Linear(hidden_size, hidden_size),
             nn.ReLU(),
@@ -23,7 +23,7 @@ class Actor(nn.Module):
         
     def forward(self, state):
         out = self.model(state)
-        
+
         return torch.tanh(out / 30)
         
 
