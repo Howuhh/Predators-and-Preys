@@ -51,7 +51,7 @@ int force_not_intersect(entity* Ent, entity* Other){
     if (is_intersect(Ent, Other)){
         double v_x = Ent -> position[0] - Other -> position[0];
         double v_y = Ent -> position[1] - Other -> position[1];
-        double norm = sqrt(v_x * v_x + v_y * v_y) + 1e-8;
+        double norm = sqrt(v_x * v_x + v_y * v_y) + 1e-9;
         v_x /= norm;
         v_y /= norm;
         double r = (Ent -> radius + Other -> radius) * (1 + 1e-2);
@@ -69,13 +69,13 @@ void force_clip_position(entity* Ent, double min_x, double min_y, double max_x, 
 
     double r = Ent -> radius;
     
-    if (Ent -> position[0] < min_x + r + 1e-2)
-        Ent -> position[0] = min_x + r + 1e-2;
+    if (Ent -> position[0] < r + min_x + 1e-2)
+        Ent -> position[0] = r + min_x + 1e-2;
     else if (Ent -> position[0] > max_x - r - 1e-2)
         Ent -> position[0] = max_x - r - 1e-2;
         
-    if (Ent -> position[1] < min_y + r + 1e-2)
-        Ent -> position[1] = min_y + r + 1e-2;
+    if (Ent -> position[1] < r + min_y + 1e-2)
+        Ent -> position[1] = r + min_y + 1e-2;
     else if (Ent -> position[1] > max_y - r - 1e-2)
         Ent -> position[1] = max_y - r - 1e-2;
 }

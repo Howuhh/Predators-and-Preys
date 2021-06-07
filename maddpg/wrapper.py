@@ -17,10 +17,17 @@ class VectorizeWrapper:
                 prey["x_pos"] = 0
                 prey["y_pos"] = 0
                 prey["radius"] = 0
-                # prey["speed"] = 0
                 prey["is_alive"] = i + 2
-        # state_dicts["preys"] = sorted(state_dicts["preys"], key=lambda d: d["is_alive"])
         return state_dicts
+
+    # @staticmethod
+    # def _team_masking(state_dicts):
+    #     state_dicts = deepcopy(state_dicts)
+    #     for i, team in enumerate(["predators", "preys", "obstacles"]):
+    #         if team in state_dicts:
+    #             for agent_state in state_dicts[team]:
+    #                 agent_state["team"] = 10 + i * 10
+    #     return state_dicts
 
     @staticmethod
     def _vectorize_state(state_dicts):
@@ -29,7 +36,6 @@ class VectorizeWrapper:
             states = []
 
             for state_dict in state_dicts_:
-                # state_dict.pop("is_alive", None)
                 state_dict.pop("speed", None)
                 
                 states.extend(list(state_dict.values()))
@@ -41,15 +47,12 @@ class VectorizeWrapper:
     @staticmethod
     def _vectorize_reward(reward_dicts):
         return [reward_dicts["predators"].mean(), reward_dicts["preys"].mean()]
-        # def _reward_to_array(reward_dicts):
-        #             return sum([d["reward"] for d in reward_dicts])
-
-        # return [_reward_to_array(reward_dicts["predators"]), _reward_to_array(reward_dicts["preys"])]
     
     def step(self, predator_actions, prey_actions):
         state_dict, reward, done = self.env.step(predator_actions, prey_actions)
         
         state_dict = self._death_masking(state_dict)
+        # state_dict = self._team_masking(state_dict)
         
         if self.return_state_dict:
             return self._vectorize_state(state_dict), self._vectorize_reward(reward), done, state_dict
@@ -60,6 +63,7 @@ class VectorizeWrapper:
         state_dict = self.env.reset()
         
         state_dict = self._death_masking(state_dict)
+        # state_dict = self._team_masking(state_dict)
 
         if self.return_state_dict:
             return self._vectorize_state(state_dict), state_dict

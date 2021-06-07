@@ -37,29 +37,25 @@ class PredatorsAndPreysEnv:
             self.visualizer = GuiVisualizer(self.game)
         else:
             self.visualizer = None
-            
+
     def seed(self, n):
         self.game.seed(n)
-        
+
     def step(self, predator_actions, prey_actions):
         if self.time_left < 0:
-            self.time_left -= 1
-            if self.time_left < -10:
-                raise Exception("Reset the environment!!!")
-            else:
-                return self.game.get_state_dict(), self.game.get_reward(), True
+            return self.game.get_state_dict(), True
 
         action_dict = {
             "preys": prey_actions,
             "predators": predator_actions
         }
-        
+
         for _ in range(self.frame_skip):
             self.game.step(action_dict)
             if self.visualizer is not None:
                 self.visualizer.update()
-                time.sleep(self.world_timestep * 2)
-        
+                time.sleep(self.world_timestep)
+
         self.time_left -= 1
         state = self.game.get_state_dict()
         is_done = True
@@ -69,7 +65,7 @@ class PredatorsAndPreysEnv:
         
         reward = self.game.get_reward()
         return state, reward, is_done
-    
+
     def reset(self):
         self.game.reset()
         self.time_left = self.time_limit

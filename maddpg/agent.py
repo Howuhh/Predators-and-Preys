@@ -6,14 +6,45 @@ import numpy as np
 
 from copy import deepcopy
 
+# class StateEncoder(nn.Module):
+#     def __init__(self, team_size, obstacle_size, embedding_size=16):
+#         super().__init__()
+#         self.team_size = team_size
+        
+#         self.team_fc = nn.Sequential(
+#             nn.Linear(team_size, embedding_size),
+#             nn.Tanh()
+#         )
+#         self.obst_fc = nn.Sequential(
+#             nn.Linear(obstacle_size, embedding_size),
+#             nn.Sigmoid()
+#         )
+        
+#     def forward(self, state):
+#         team, obst = torch.split(state, self.team_size, dim=-1)
+        
+#         team_emb = self.team_fc(team)
+#         obst_emb = self.obst_fc(obst)
+
+#         return torch.cat([team_emb, obst_emb], dim=-1)
 
 class Actor(nn.Module):
     def __init__(self, state_size, action_size, hidden_size=64):
         super().__init__()
         self.action_size = action_size
         
+        self.team_fc = nn.Sequential(
+            nn.Linear(4 + 3 * 2, 16),
+            nn.Tanh()
+        )
+        self.obst_fc = nn.Sequential(
+            nn.Linear(3 * 4, 16),
+            nn.Sigmoid()
+        )
+        
         self.model = nn.Sequential(
-            nn.Linear(state_size, hidden_size),
+            nn.Linear(32, hidden_size),
+            # nn.Linear(state_size, hidden_size),
             nn.ReLU(),
             nn.Linear(hidden_size, hidden_size),
             nn.ReLU(),
@@ -22,17 +53,54 @@ class Actor(nn.Module):
         self.model[-1].weight.data.uniform_(-3e-3, 3e-3)
         
     def forward(self, state):
-        out = self.model(state)
+        team, obst = torch.split(state, [3 * 2 + 4, 3 * 4], dim=-1)
+            
+        team_emb = self.team_fc(team)
+        obst_emb = self.obst_fc(obst)
 
+        out = self.model(torch.cat([team_emb, obst_emb], dim=-1)) # лучший способ
+        # out = self.model(team_emb * obst_emb)
+        # out = self.model(state)
+        
         return torch.tanh(out / 30)
+
+
+# class Actor(nn.Module):
+#     def __init__(self, state_size, action_size, hidden_size=64):
+#         super().__init__()
+#         self.action_size = action_size
+        
+#         self.model = nn.Sequential(
+#             nn.Linear(state_size, hidden_size),
+#             nn.ReLU(),
+#             nn.Linear(hidden_size, hidden_size),
+#             nn.ReLU(),
+#             nn.Linear(hidden_size, action_size),
+#         )
+#         self.model[-1].weight.data.uniform_(-3e-3, 3e-3)
+        
+#     def forward(self, state):
+#         out = self.model(state)
+
+#         return torch.tanh(out / 30)
         
 
 class CentralizedCritic(nn.Module):
     def __init__(self, state_size, action_size, hidden_size=64):
         super().__init__()
         
+        self.team_fc = nn.Sequential(
+            nn.Linear(4 + 3 * 2, 16),
+            nn.Tanh()
+        )
+        self.obst_fc = nn.Sequential(
+            nn.Linear(3 * 4, 16),
+            nn.Sigmoid()
+        )
+        
         self.model = nn.Sequential(
-            nn.Linear(state_size + action_size, hidden_size),
+            # nn.Linear(state_size + action_size, hidden_size),
+            nn.Linear(32 + action_size, hidden_size),
             nn.ReLU(),
             nn.Linear(hidden_size, hidden_size),
             nn.ReLU(), 
@@ -40,7 +108,13 @@ class CentralizedCritic(nn.Module):
         )
         
     def forward(self, state, action):
-        state_action = torch.cat([state, action], dim=-1)
+        team, obst = torch.split(state, [4 + 3 * 2, 3 * 4], dim=-1)
+        
+        team_emb = self.team_fc(team)
+        obst_emb = self.obst_fc(obst)
+        
+        state_action = torch.cat([team_emb, obst_emb, action], dim=-1)
+        # state_action = torch.cat([state, action], dim=-1)
         
         return self.model(state_action)
 

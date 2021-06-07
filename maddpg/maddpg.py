@@ -38,6 +38,16 @@ class MADDPG:
             agent.critic_optimizer.step()
             
             # current actors actions for updates
+            # new_agents_actions = []
+            # for i, curr_agent in enumerate(self.agents):
+            #     if i != agent_idx:
+            #         with torch.no_grad():
+            #             copy_agent = deepcopy(curr_agent)
+            #         new_action = copy_agent.actor(global_state).to(self.device)
+            #     else:
+            #         new_action = curr_agent.actor(global_state).to(self.device)
+            #     new_agents_actions.append(new_action)
+            # new_agents_actions = torch.cat(new_agents_actions, dim=-1)
             with torch.no_grad():
                 new_agents_actions = deepcopy(agents_actions)
                 offset = sum([self.agents[past_idx].actor.action_size for past_idx in range(agent_idx)])

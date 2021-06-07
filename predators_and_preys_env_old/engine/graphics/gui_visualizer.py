@@ -22,6 +22,14 @@ class GuiVisualizer:
         self.y_bias = game.y_limit
 
     def update(self):
+        to_break = False
+        for event in pygame.event.get():
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_SPACE:
+                    to_break = True
+                if event.key == pygame.K_q:
+                    quit()
+
         sd = self.game.get_state_dict()
         self.screen.fill((255, 255, 255))
         for e in sd["obstacles"]:
@@ -50,4 +58,6 @@ class GuiVisualizer:
                                      e["radius"] * self.ratio)
 
         pygame.display.update()
+        
+        return to_break
 
