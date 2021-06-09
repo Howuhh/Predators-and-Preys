@@ -6,6 +6,7 @@ class Entity:
         self.position = np.array([position_x, position_y])
         self.radius = radius
         self.speed = speed
+        self.dead = False # for preys
 
     def move(self, angle, timestep):
         self.position = self.position + np.array([self.speed * np.cos(np.pi * angle) * timestep,
@@ -22,7 +23,7 @@ class Entity:
 
     def force_not_intersect(self, other):
         if self.is_intersect(other):
-            v = (self.position - other.position) / (self.center_distance(other) + 1e-8)
+            v = (self.position - other.position) / (self.center_distance(other) + 1e-9)
             v *= (other.radius + self.radius) * (1 + 1e-2)
             self.position = other.position + v
             return True

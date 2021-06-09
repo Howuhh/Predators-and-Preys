@@ -20,15 +20,6 @@ class VectorizeWrapper:
                 prey["is_alive"] = i + 2
         return state_dicts
 
-    # @staticmethod
-    # def _team_masking(state_dicts):
-    #     state_dicts = deepcopy(state_dicts)
-    #     for i, team in enumerate(["predators", "preys", "obstacles"]):
-    #         if team in state_dicts:
-    #             for agent_state in state_dicts[team]:
-    #                 agent_state["team"] = 10 + i * 10
-    #     return state_dicts
-
     @staticmethod
     def _vectorize_state(state_dicts):
         
@@ -51,22 +42,20 @@ class VectorizeWrapper:
     def step(self, predator_actions, prey_actions):
         state_dict, reward, done = self.env.step(predator_actions, prey_actions)
         
-        state_dict = self._death_masking(state_dict)
-        # state_dict = self._team_masking(state_dict)
+        state_dict_masked = self._death_masking(state_dict)
         
         if self.return_state_dict:
-            return self._vectorize_state(state_dict), self._vectorize_reward(reward), done, state_dict
+            return self._vectorize_state(state_dict_masked), self._vectorize_reward(reward), done, state_dict
         
-        return self._vectorize_state(state_dict), self._vectorize_reward(reward), done
+        return self._vectorize_state(state_dict_masked), self._vectorize_reward(reward), done
     
     def reset(self):
         state_dict = self.env.reset()
         
-        state_dict = self._death_masking(state_dict)
-        # state_dict = self._team_masking(state_dict)
+        state_dict_masked = self._death_masking(state_dict)
 
         if self.return_state_dict:
-            return self._vectorize_state(state_dict), state_dict
+            return self._vectorize_state(state_dict_masked), state_dict
 
         return self._vectorize_state(state_dict)
     

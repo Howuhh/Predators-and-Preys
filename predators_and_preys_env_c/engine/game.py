@@ -63,43 +63,43 @@ class Game:
         for a, e in zip(actions["predators"], self.predators):
             e.move(a, self.world_timestep)
 
-        for _ in range(20):
+        corrected = True
+        while corrected:
             corrected = False
             for i, (is_alive, e) in enumerate(self.preys):
                 this_corrected = False
                 e.force_clip_positon(-self.x_limit, -self.y_limit, self.x_limit, self.y_limit)
                 for other in self.obstacles:
                     this_corrected = this_corrected or e.force_not_intersect(other)
-                    if this_corrected:
-                        break
                 if not this_corrected:
                     for j, (_, other) in enumerate(self.preys):
                         if i == j:
                             continue
                         this_corrected = this_corrected or e.force_not_intersect(other)
-                        if this_corrected:
-                            break
+                if not this_corrected:
+                    for other in self.obstacles:
+                        this_corrected = this_corrected or e.force_not_intersect(other)
                 corrected = corrected or this_corrected
                 e.force_clip_positon(-self.x_limit, -self.y_limit, self.x_limit, self.y_limit)
             if not corrected:
                 break
 
-        for _ in range(20):
+        corrected = True
+        while corrected:
             corrected = False
             for i, e in enumerate(self.predators):
                 this_corrected = False
                 e.force_clip_positon(-self.x_limit, -self.y_limit, self.x_limit, self.y_limit)
                 for other in self.obstacles:
                     this_corrected = this_corrected or e.force_not_intersect(other)
-                    if this_corrected:
-                        break
                 if not this_corrected:
                     for j, other in enumerate(self.predators):
                         if i == j:
                             continue
                         this_corrected = this_corrected or e.force_not_intersect(other)
-                        if this_corrected:
-                            break
+                if not this_corrected:
+                    for other in self.obstacles:
+                        this_corrected = this_corrected or e.force_not_intersect(other)
                 corrected = corrected or this_corrected
                 e.force_clip_positon(-self.x_limit, -self.y_limit, self.x_limit, self.y_limit)
             if not corrected:
