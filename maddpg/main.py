@@ -81,8 +81,8 @@ def train_maddpg(env_config, agents_configs, buffer_config, timesteps, batch_siz
         if step % update_every == 0 and step > batch_size:
             for _ in range(updates_per_iter):
                 batch = buffer.sample(batch_size)
-                # maddpg.update(batch, step)
-                losses = maddpg.update(batch, step)
+                maddpg.update(batch, step)
+                # losses = maddpg.update(batch, step)
         
             if step % eval_every == 0:
                 rewards = eval_maddpg(env_config, maddpg, episodes=25, seed=42)
@@ -90,9 +90,9 @@ def train_maddpg(env_config, agents_configs, buffer_config, timesteps, batch_siz
         
                 print("==" * 15 + f"Step {step}" + "==" * 15)
                 for i in range(len(maddpg.agents)):
-                    critic_loss, actor_loss = losses[i]
-                    print(f"Agent{i + 1} -- Reward: {rewards[i]}, Critic loss: {round(critic_loss, 5)}, Actor loss: {round(actor_loss, 5)}")
-                    # print(f"Agent{i + 1} -- Reward: {rewards[i]}")
+                    # critic_loss, actor_loss = losses[i]
+                    # print(f"Agent{i + 1} -- Reward: {rewards[i]}, Critic loss: {round(critic_loss, 5)}, Actor loss: {round(actor_loss, 5)}")
+                    print(f"Agent{i + 1} -- Reward: {rewards[i]}")
         
         for agent in maddpg.agents:
             agent.act_noise = 2.0 - (2.0 - 0.1) * step / timesteps
@@ -104,27 +104,27 @@ if __name__ == "__main__":
     from configs import predator_agent_config, prey_agent_config, buffer_config
     from configs import SIMPLE1v1, SIMPLE2v1, SIMPLE2v2, SIMPLE1v2, SIMPLE2v5, SUBMISSION2v5
     
-    # maddpg = train_maddpg(
-    #     env_config=SIMPLE2v2,
-    #     agents_configs=[predator_agent_config, prey_agent_config],
-    #     buffer_config=buffer_config,
-    #     timesteps=100_000,
-    #     batch_size=256,
-    #     updates_per_iter=1,
-    #     update_every=1,
-    #     eval_every=20_000,
-    #     save_dir="agents50python",
-    #     seed=42
-    # )
+    maddpg = train_maddpg(
+        env_config=SUBMISSION2v5,
+        agents_configs=[predator_agent_config, prey_agent_config],
+        buffer_config=buffer_config,
+        timesteps=100_000,
+        batch_size=256,
+        updates_per_iter=1,
+        update_every=1,
+        eval_every=20_000,
+        save_dir="agents_test",
+        seed=42
+    )
     
     # baseline_predator = ChasingPredatorAgent()
     # baseline_prey = FleeingPreyAgent()
 
-    # maddpg = torch.load("agents50python/maddpg_20000.pt", map_location="cpu")
+    # maddpg = torch.load("agents_test/maddpg_100000.pt", map_location="cpu")
     # predator, prey = maddpg.agents
     
-    # SIMPLE2v2["environment"]["time_limit"] = 100
-    # env = VectorizeWrapper(PredatorsAndPreysEnv(config=SIMPLE2v2, render=True), return_state_dict=True)
+    # SUBMISSION2v5["environment"]["time_limit"] = 100
+    # env = VectorizeWrapper(PredatorsAndPreysEnv(config=SUBMISSION2v5, render=True), return_state_dict=True)
     
     # for _ in range(200):
     #     set_seed(env, np.random.randint(5000, 10000))

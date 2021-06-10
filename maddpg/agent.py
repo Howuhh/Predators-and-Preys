@@ -31,10 +31,13 @@ class StateEncoder(nn.Module):
 
 
 class Actor(nn.Module):
-    def __init__(self, teams_state_size, obstacle_state_size, action_size, embedding_size=16, hidden_size=64, temperature=1.0):
+    def __init__(self, teams_state_size, obstacle_state_size, action_size, embedding_size=16, hidden_size=64, temperature=15):
         super().__init__()
         self.action_size = action_size
         self.temp = temperature
+        
+        print("embedding_size", embedding_size)
+        print("hidden_size", hidden_size)
         
         if obstacle_state_size == 0:
             self.model = nn.Sequential(
@@ -53,16 +56,21 @@ class Actor(nn.Module):
                 ),
                 nn.Linear(2 * embedding_size, hidden_size),
                 nn.ReLU(),
+                # nn.LayerNorm(hidden_size),
                 nn.Linear(hidden_size, hidden_size),
                 nn.ReLU(),
+                # nn.LayerNorm(hidden_size),
                 nn.Linear(hidden_size, action_size),
             )
-        self.model[-1].weight.data.uniform_(-1e-4, 1e-4)
+        self.model[-1].weight.data.uniform_(-3e-3, 3e-3)
         
-    def forward(self, state):
+    def forward(self, state, return_raw=False):
         out = self.model(state)
+        # print(out)
+        if return_raw:
+            return out, torch.tanh(out / self.temp)
         
-        return torch.tanh(out / self.temp) # temp=30 best
+        return torch.tanh(out / self.temp)
     
 
 class CentralizedCritic(nn.Module):
@@ -74,8 +82,10 @@ class CentralizedCritic(nn.Module):
         self.model = nn.Sequential(
             nn.Linear(state_size + action_size, hidden_size),
             nn.ReLU(),
+            # nn.LayerNorm(hidden_size),
             nn.Linear(hidden_size, hidden_size),
             nn.ReLU(), 
+            # nn.LayerNorm(hidden_size),
             nn.Linear(hidden_size, 1)
         )
         
@@ -96,10 +106,14 @@ class CentralizedCritic(nn.Module):
 
 
 class Agent:
-    def __init__(self, teams_state_size, obstacle_state_size, actor_action_size, 
-                 critic_action_size, actor_hidden_size=64, critic_hidden_size=64, 
-                 actor_lr=1e-3, critic_lr=1e-3, tau=1e-3, gamma=0.99, act_noise=0.1, device="cpu"):
-        self.actor = Actor(teams_state_size, obstacle_state_size, actor_action_size, actor_hidden_size).to(device)
+    def __init__(self, teams_state_size, obstacle_state_size, actor_action_size, critic_action_size, 
+                 actor_hidden_size=64, critic_hidden_size=64, embedding_size=16,
+                 actor_lr=1e-3, critic_lr=1e-3, tau=1e-3, gamma=0.99, act_noise=0.1, 
+                 actions_decay=1e-5, temperature=30, device="cpu"):
+        self.actor = Actor(teams_state_size, obstacle_state_size, actor_action_size, 
+                           embedding_size=embedding_size,
+                           hidden_size=actor_hidden_size, 
+                           temperature=temperature).to(device)
         self.actor_optimizer = optim.Adam(self.actor.parameters(), lr=actor_lr)
         
         self.critic1 = CentralizedCritic(teams_state_size, obstacle_state_size, 
@@ -119,6 +133,7 @@ class Agent:
         self.gamma = gamma
         self.device = device
         self.act_noise = act_noise
+        self.actions_decay = actions_decay
         
     def __soft_update(self, target, source):
         for tp, sp in zip(target.parameters(), source.parameters()):

@@ -28,11 +28,14 @@ prey_agent_config = {
     "critic_action_size": CRITIC_ACTION_SIZE,
     "actor_hidden_size": 64, 
     "critic_hidden_size": 64, 
-    "actor_lr": 1e-3, 
-    "critic_lr": 1e-3, 
+    "embedding_size": 16,
+    "actor_lr": 1e-4, 
+    "critic_lr": 1e-4, 
     "tau": 1e-3, 
     "gamma": 0.99, 
-    "act_noise": 1.0
+    "act_noise": 1.0,
+    "actions_decay": 1e-5, # 1e-5
+    "temperature": 30 # 15
 }
 
 predator_agent_config = {
@@ -41,12 +44,15 @@ predator_agent_config = {
     "actor_action_size": PREDATOR_TEAM_SIZE,
     "critic_action_size": CRITIC_ACTION_SIZE,
     "actor_hidden_size": 64, 
-    "critic_hidden_size": 64, 
-    "actor_lr": 1e-3, 
-    "critic_lr": 1e-3, 
+    "critic_hidden_size": 64,
+    "embedding_size": 16, 
+    "actor_lr": 1e-4, 
+    "critic_lr": 1e-4, 
     "tau": 1e-3, 
     "gamma": 0.99, 
-    "act_noise": 1.0
+    "act_noise": 1.0,
+    "actions_decay": 1e-5,
+    "temperature": 30
 }
 
 SIMPLE1v1 = {
